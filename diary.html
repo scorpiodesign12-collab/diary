@@ -205,7 +205,8 @@ function render(){
     (t.desc?`<div class="desc">${E(t.desc)}</div>`:'')+
     `<div class="bar"><i style="width:${p}%"></i></div>`+
     (v==='cal'?cal(t,map,d)+`<div class="dh">${d===T?'Сегодня · ':''}${pd(d).toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})}</div>`:'')+
-    rows(t,d)+(d!==T?'<div class="hint">Отмечать можно только сегодня</div>':'')+`</div>`;
+    rows(t,d)+(d!==T?'<div class="hint">Отмечать можно только сегодня</div>':'')+
+    (t.end===T&&c===t.items.length?`<button class="btn" data-a="stat" data-id="${t.id}">Отчет</button>`:'')+`</div>`;
   });
   $('#m').innerHTML=h;tick();
 }
@@ -259,13 +260,14 @@ function tips(t,st){
 function statView(id){
   statId=id;const t=S.tasks.find(x=>x.id===id);if(!t)return;
   const T=today(),st=stat(t),sc=Math.max(1,Math.min(10,Math.round(st.eff/10)));
+  const tl=(S.log[t.id]||{})[T]||{},fin=t.end<T||(t.end===T&&t.items.every(i=>tl[i.id]));
   const map={};st.days.forEach(x=>map[x.d]=x.st);
   const g=st.days.slice(-30),n=g.length||1,bw=300/n;
   const bars=g.map((x,k)=>{
     const a=x.on/x.n*100,b=(x.c-x.on)/x.n*100,X=10+k*bw;
     return `<rect x="${X+1}" y="${110-a}" width="${Math.max(bw-2,1)}" height="${a}" rx="2" fill="var(--ac)"/><rect x="${X+1}" y="${110-a-b}" width="${Math.max(bw-2,1)}" height="${b}" rx="2" fill="var(--ac2)"/>`+(x.st==='miss'?`<rect x="${X+1}" y="107" width="${Math.max(bw-2,1)}" height="3" fill="#999"/>`:'')}).join('');
   const opts=S.tasks.map(x=>`<option value="${x.id}" ${x.id===id?'selected':''}>${E(x.title)}</option>`).join('');
-  sheet(`<h2>${t.end<T?'Отчет':'Статистика'}</h2><select data-a="pick">${opts}</select>
+  sheet(`<h2>${fin?'Отчет':'Статистика'}</h2><select data-a="pick">${opts}</select>
   <div class="big">${st.eff}%</div><div class="sub">так хорошо выполнено задание</div>
   <h3 class="sec">График</h3>
   <svg viewBox="0 0 320 130" width="100%"><path d="M10 10H310M10 60H310M10 110H310" stroke="#0002" stroke-dasharray="3 4"/><text x="10" y="8" font-size="8" fill="#999">100%</text>${bars}<text x="10" y="124" font-size="9" fill="#999">${g.length?fd(g[0].d):''}</text><text x="310" y="124" font-size="9" fill="#999" text-anchor="end">${g.length?fd(g[g.length-1].d):''}</text></svg>
